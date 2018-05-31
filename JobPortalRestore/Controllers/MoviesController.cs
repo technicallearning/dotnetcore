@@ -27,7 +27,7 @@ namespace JobPortalRestore.Web.Controllers
         // GET: Movie/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if(id == null)
+            if (id == null)
             {
                 return NotFound();
             }
@@ -53,7 +53,7 @@ namespace JobPortalRestore.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ID, Title, ReleaseDate, Genre, Price")] Movie movie)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
                 _context.Add(movie);
                 await _context.SaveChangesAsync();
@@ -66,13 +66,13 @@ namespace JobPortalRestore.Web.Controllers
         // GET: Movie/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if(id == null)
+            if (id == null)
             {
                 return NotFound();
             }
 
             var movie = await _context.Movie.SingleOrDefaultAsync(m => m.ID == id);
-            if(movie == null)
+            if (movie == null)
             {
                 return NotFound();
             }
@@ -85,33 +85,68 @@ namespace JobPortalRestore.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("ID, Title, ReleaseDate, Genre, Price")] Movie movie)
         {
-            if(id != movie.ID)
+            if (id != movie.ID)
             {
                 return NotFound();
             }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    _context.Update(movie);
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    if (!MovieExists(movie.ID))
+                    {
+                        return NotFound();
+                    }
+                    else
+                    {
+                        throw;
+                    }
+                }
+                return RedirectToAction(nameof(Index));
+            }
+            return View(movie);
         }
 
         // GET: Movie/Delete/5
-        public ActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int? id)
         {
-            return View();
+            if(id == null)
+            {
+                return NotFound();
+            }
+
+            var movie = await _context.Movie
+                    .SingleOrDefaultAsync(m => m.ID == id);
+
+            if (movie == null)
+            {
+                return NotFound();
+            }
+
+            return View(movie);
         }
 
-        // POST: Movie/Delete/5
-        [HttpPost]
+        // POST: Movies/Delete/5
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public ActionResult Delete(int id, IFormCollection collection)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            try
-            {
-                // TODO: Add delete logic here
+            var movie = await _context.Movie.SingleOrDefaultAsync(m => m.ID == id);
+            _context.Movie.Remove(movie);
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
 
-                return RedirectToAction(nameof(Index));
-            }
-            catch
-            {
-                return View();
-            }
+        private bool MovieExists(int id)
+        {
+            return _context.Movie.Any(e => e.ID == id);
         }
     }
 }
+
